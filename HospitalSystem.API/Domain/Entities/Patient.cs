@@ -1,8 +1,5 @@
-﻿using System;
+namespace HospitalSystem.API.Domain.Entities;
 
-public class Class1
+public class Patient : Person
 {
-	public Class1()
-	{
-	}
 }

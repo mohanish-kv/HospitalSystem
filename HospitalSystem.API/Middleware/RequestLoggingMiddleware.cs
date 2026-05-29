@@ -1,8 +1,20 @@
-﻿using System;
+namespace HospitalSystem.API.Middleware;
 
-public class Class1
+public class RequestLoggingMiddleware
 {
-	public Class1()
-	{
-	}
+    private readonly RequestDelegate _next;
+    private readonly ILogger<RequestLoggingMiddleware> _logger;
+
+    public RequestLoggingMiddleware(RequestDelegate next, ILogger<RequestLoggingMiddleware> logger)
+    {
+        _next = next;
+        _logger = logger;
+    }
+
+    public async Task InvokeAsync(HttpContext context)
+    {
+        _logger.LogInformation("Handling {Method} {Path}", context.Request.Method, context.Request.Path);
+        await _next(context);
+        _logger.LogInformation("Handled {Method} {Path} with status {StatusCode}", context.Request.Method, context.Request.Path, context.Response.StatusCode);
+    }
 }

@@ -1,8 +1,5 @@
-﻿using System;
+namespace HospitalSystem.API.Interfaces;
 
-public class Class1
+public interface IAppointmentRepository
 {
-	public Class1()
-	{
-	}
 }

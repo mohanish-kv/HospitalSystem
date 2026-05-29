@@ -1,8 +1,9 @@
-﻿using System;
+namespace HospitalSystem.API.Domain.Entities;
 
-public class Class1
+public class Appointment
 {
-	public Class1()
-	{
-	}
+    public int Id { get; set; }
+    public int PatientId { get; set; }
+    public int DoctorId { get; set; }
+    public DateTime ScheduledAt { get; set; }
 }
