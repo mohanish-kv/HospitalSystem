@@ -1,3 +1,5 @@
+using HospitalSystem.API.Domain.Exceptions;
+
 namespace HospitalSystem.API.Domain.Entities;
 
 public class Appointment
@@ -13,5 +15,13 @@ public class Appointment
     {
         get => AppointmentDate;
         set => AppointmentDate = value;
+    }
+
+    public void ValidateFutureDate()
+    {
+        if (AppointmentDate <= DateTime.UtcNow)
+        {
+            throw new DomainException("Appointment date must be in the future.");
+        }
     }
 }

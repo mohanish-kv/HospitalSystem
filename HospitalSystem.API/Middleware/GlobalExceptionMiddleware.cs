@@ -25,6 +25,12 @@ public class GlobalExceptionMiddleware
             context.Response.StatusCode = StatusCodes.Status400BadRequest;
             await context.Response.WriteAsJsonAsync(new { error = ex.Message });
         }
+        catch (KeyNotFoundException ex)
+        {
+            _logger.LogWarning(ex, "A requested resource was not found.");
+            context.Response.StatusCode = StatusCodes.Status404NotFound;
+            await context.Response.WriteAsJsonAsync(new { error = ex.Message });
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "An unhandled error occurred.");
