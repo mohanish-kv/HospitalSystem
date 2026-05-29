@@ -16,14 +16,19 @@ public class RequestLoggingMiddleware
     {
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
 
-        await _next(context);
+        context.Response.OnCompleted(() =>
+        {
+            stopwatch.Stop();
+            _logger.LogInformation(
+                "{Method} {Path} responded {StatusCode} in {Elapsed}ms",
+                context.Request.Method,
+                context.Request.Path,
+                context.Response.StatusCode,
+                stopwatch.ElapsedMilliseconds);
 
-        stopwatch.Stop();
-        _logger.LogInformation(
-            "{Method} {Path} responded {StatusCode} in {Elapsed}ms",
-            context.Request.Method,
-            context.Request.Path,
-            context.Response.StatusCode,
-            stopwatch.ElapsedMilliseconds);
+            return Task.CompletedTask;
+        });
+
+        await _next(context);
     }
 }

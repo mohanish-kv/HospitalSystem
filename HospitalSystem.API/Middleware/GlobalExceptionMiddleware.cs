@@ -1,5 +1,6 @@
-using HospitalSystem.API.Domain.Exceptions;
 using System.Text.Json;
+using HospitalSystem.API.Domain.Exceptions;
+using Microsoft.Data.SqlClient;
 
 namespace HospitalSystem.API.Middleware;
 
@@ -23,31 +24,37 @@ public class GlobalExceptionMiddleware
         }
         catch (DomainException ex)
         {
-            await WriteError(context, 400, ex.Message);
+            _logger.LogWarning(ex, "Domain validation error");
+            await WriteError(context, StatusCodes.Status400BadRequest, ex.Message);
         }
         catch (KeyNotFoundException ex)
         {
-            await WriteError(context, 404, ex.Message);
+            _logger.LogWarning(ex, "Requested resource was not found");
+            await WriteError(context, StatusCodes.Status404NotFound, ex.Message);
         }
-        catch (Microsoft.Data.SqlClient.SqlException ex) when (ex.Number == 50001 || ex.Number == 50002)
+        catch (SqlException ex) when (ex.Number == 50001 || ex.Number == 50002)
         {
-            await WriteError(context, 409, ex.Message);
+            _logger.LogWarning(ex, "Duplicate patient contact information");
+            await WriteError(context, StatusCodes.Status409Conflict, ex.Message);
         }
-        catch (Microsoft.Data.SqlClient.SqlException ex) when (ex.Number == 50010)
+        catch (SqlException ex) when (ex.Number == 50010)
         {
-            await WriteError(context, 400, ex.Message);
+            _logger.LogWarning(ex, "Doctor unavailable for requested appointment");
+            await WriteError(context, StatusCodes.Status400BadRequest, ex.Message);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Unhandled exception");
-            await WriteError(context, 500, "An unexpected error occurred.");
+            await WriteError(context, StatusCodes.Status500InternalServerError, "An unexpected error occurred.");
         }
     }
 
     private static async Task WriteError(HttpContext ctx, int statusCode, string message)
     {
+        ctx.Response.Clear();
         ctx.Response.StatusCode = statusCode;
         ctx.Response.ContentType = "application/json";
+
         var body = JsonSerializer.Serialize(new { error = message });
         await ctx.Response.WriteAsync(body);
     }
