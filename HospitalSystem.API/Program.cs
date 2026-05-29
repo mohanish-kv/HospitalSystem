@@ -14,11 +14,12 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddScoped<IPatientRepository, PatientRepository>();
 builder.Services.AddScoped<IAppointmentRepository, AppointmentRepository>();
 builder.Services.AddScoped<IDoctorRepository, DoctorRepository>();
-
-// Services
+builder.Services.AddScoped<IReportRepository, ReportRepository>();
 builder.Services.AddScoped<PatientService>();
 builder.Services.AddScoped<DoctorService>();
 builder.Services.AddScoped<AppointmentService>();
+builder.Services.AddScoped<DoctorService>();
+builder.Services.AddScoped<ReportService>();
 
 var app = builder.Build();
 

@@ -34,17 +34,17 @@ public class PatientsController : ControllerBase
     [HttpPost]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> RegisterPatient(RegisterPatientRequest request)
+    public async Task<IActionResult> RegisterPatient([FromBody] RegisterPatientRequest request)
     {
         var id = await _patientService.RegisterAsync(request);
-        return CreatedAtAction(nameof(GetPatientById), new { id }, new { patientId = id });
+        return CreatedAtAction(nameof(RegisterPatient), new { id }, new { id });
     }
 
     [HttpPut("{id:int}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> UpdatePatient(int id, UpdatePatientRequest request)
+    public async Task<IActionResult> UpdatePatient(int id, [FromBody] UpdatePatientRequest request)
     {
         await _patientService.UpdateAsync(id, request);
         return NoContent();
