@@ -4,7 +4,7 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// TODO: Add DI registrations
+// TODO: Add DI registrations in Chapter 7
 
 var app = builder.Build();
 
@@ -14,7 +14,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-// TODO: Add middleware 
+// TODO: Add middleware in Chapter 7
 app.UseHttpsRedirection();
 app.UseAuthorization();
 app.MapControllers();

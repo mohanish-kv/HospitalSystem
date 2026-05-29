@@ -1,8 +1,5 @@
-﻿using System;
+namespace HospitalSystem.API.Services;
 
-public class Class1
+public class DoctorService
 {
-	public Class1()
-	{
-	}
 }

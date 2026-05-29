@@ -1,8 +1,8 @@
-﻿using System;
+namespace HospitalSystem.API.Domain.Exceptions;
 
-public class Class1
+public class AppointmentConflictException : DomainException
 {
-	public Class1()
-	{
-	}
+    public AppointmentConflictException(string message) : base(message)
+    {
+    }
 }

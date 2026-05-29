@@ -1,8 +1,7 @@
-﻿using System;
+using HospitalSystem.API.Interfaces;
 
-public class Class1
+namespace HospitalSystem.API.Repositories;
+
+public class DoctorRepository : IDoctorRepository
 {
-	public Class1()
-	{
-	}
 }

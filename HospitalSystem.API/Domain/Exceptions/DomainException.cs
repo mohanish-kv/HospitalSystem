@@ -1,8 +1,8 @@
-﻿using System;
+namespace HospitalSystem.API.Domain.Exceptions;
 
-public class Class1
+public class DomainException : Exception
 {
-	public Class1()
-	{
-	}
+    public DomainException(string message) : base(message)
+    {
+    }
 }

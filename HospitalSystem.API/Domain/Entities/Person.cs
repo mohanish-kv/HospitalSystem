@@ -1,8 +1,8 @@
-﻿using System;
+namespace HospitalSystem.API.Domain.Entities;
 
-public class Class1
+public abstract class Person
 {
-	public Class1()
-	{
-	}
+    public int Id { get; set; }
+    public string FirstName { get; set; } = string.Empty;
+    public string LastName { get; set; } = string.Empty;
 }
