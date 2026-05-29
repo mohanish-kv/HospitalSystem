@@ -5,6 +5,23 @@ public class Patient : Person
     public string Code { get; set; } = string.Empty;
     public string FullName { get; set; } = string.Empty;
     public DateOnly DateOfBirth { get; set; }
+
+    public int Age
+    {
+        get
+        {
+            var today = DateOnly.FromDateTime(DateTime.UtcNow);
+            var age = today.Year - DateOfBirth.Year;
+
+            if (DateOfBirth > today.AddYears(-age))
+            {
+                age--;
+            }
+
+            return age;
+        }
+    }
+
     public char Gender { get; set; }
     public string PhoneNumber { get; set; } = string.Empty;
     public string? Email { get; set; }

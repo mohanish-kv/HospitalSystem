@@ -1,126 +1,76 @@
 using HospitalSystem.API.Domain.Entities;
-using HospitalSystem.API.Domain.Exceptions;
+using HospitalSystem.API.DTOs.Requests;
+using HospitalSystem.API.DTOs.Responses;
 using HospitalSystem.API.Interfaces;
 
 namespace HospitalSystem.API.Services;
 
 public class PatientService
 {
-    private static readonly HashSet<char> AllowedGenders = new() { 'F', 'M', 'O' };
-    private readonly IPatientRepository _patientRepository;
+    private readonly IPatientRepository _repo;
 
-    public PatientService(IPatientRepository patientRepository)
-        => _patientRepository = patientRepository;
+    public PatientService(IPatientRepository repo) => _repo = repo;
 
-    public Task<IEnumerable<Patient>> GetActivePatientsAsync()
-        => _patientRepository.GetAllActiveAsync();
-
-    public Task<Patient?> GetPatientByIdAsync(int id)
+    public async Task<int> RegisterAsync(RegisterPatientRequest req)
     {
-        EnsurePositiveId(id);
-        return _patientRepository.GetByIdAsync(id);
+        var patient = new Patient
+        {
+            Code = req.PatientCode,
+            FullName = req.FullName,
+            DateOfBirth = req.DateOfBirth,
+            Gender = req.Gender,
+            PhoneNumber = req.PhoneNumber,
+            Email = req.Email
+        };
+
+        return await _repo.RegisterAsync(patient);
     }
 
-    public async Task<Patient> RegisterPatientAsync(Patient patient)
+    public async Task<IEnumerable<PatientResponse>> GetAllActiveAsync()
     {
-        ValidatePatientForRegistration(patient);
+        var patients = await _repo.GetAllActiveAsync();
 
-        patient.Code = NormalizeRequired(patient.Code);
-        patient.FullName = NormalizeRequired(patient.FullName);
-        patient.Gender = char.ToUpperInvariant(patient.Gender);
-        patient.PhoneNumber = NormalizeRequired(patient.PhoneNumber);
-        patient.Email = NormalizeOptional(patient.Email);
-
-        var id = await _patientRepository.RegisterAsync(patient);
-        patient.Id = id;
-
-        return await _patientRepository.GetByIdAsync(id) ?? patient;
+        return patients.Select(p => new PatientResponse
+        {
+            PatientId = p.Id,
+            PatientCode = p.Code,
+            FullName = p.FullName,
+            Age = p.Age,
+            Gender = p.Gender.ToString(),
+            PhoneNumber = p.PhoneNumber,
+            Email = p.Email
+        });
     }
 
-    public async Task<bool> UpdatePatientAsync(int id, Patient patient)
+    public async Task<PatientResponse?> GetByIdAsync(int id)
     {
-        EnsurePositiveId(id);
-        ValidatePatientForUpdate(patient);
-
-        var existingPatient = await _patientRepository.GetByIdAsync(id);
-        if (existingPatient is null)
-        {
-            return false;
-        }
-
-        patient.Id = id;
-        patient.FullName = NormalizeRequired(patient.FullName);
-        patient.PhoneNumber = NormalizeRequired(patient.PhoneNumber);
-        patient.Email = NormalizeOptional(patient.Email);
-
-        await _patientRepository.UpdateAsync(patient);
-        return true;
+        var patient = await _repo.GetByIdAsync(id);
+        return patient is null
+            ? null
+            : new PatientResponse
+            {
+                PatientId = patient.Id,
+                PatientCode = patient.Code,
+                FullName = patient.FullName,
+                Age = patient.Age,
+                Gender = patient.Gender.ToString(),
+                PhoneNumber = patient.PhoneNumber,
+                Email = patient.Email
+            };
     }
 
-    public async Task<bool> DeactivatePatientAsync(int id)
+    public async Task UpdateAsync(int id, UpdatePatientRequest req)
     {
-        EnsurePositiveId(id);
+        var patient = await _repo.GetByIdAsync(id)
+            ?? throw new KeyNotFoundException($"Patient {id} not found.");
 
-        var existingPatient = await _patientRepository.GetByIdAsync(id);
-        if (existingPatient is null)
-        {
-            return false;
-        }
+        patient.FullName = req.FullName;
+        patient.PhoneNumber = req.PhoneNumber;
+        patient.Email = req.Email;
 
-        await _patientRepository.DeactivateAsync(id);
-        return true;
+        await _repo.UpdateAsync(patient);
     }
 
-    private static void ValidatePatientForRegistration(Patient patient)
-    {
-        if (string.IsNullOrWhiteSpace(patient.Code))
-        {
-            throw new DomainException("Patient code is required.");
-        }
-
-        if (patient.DateOfBirth == default)
-        {
-            throw new DomainException("Patient date of birth is required.");
-        }
-
-        if (patient.DateOfBirth > DateOnly.FromDateTime(DateTime.UtcNow.Date))
-        {
-            throw new DomainException("Patient date of birth cannot be in the future.");
-        }
-
-        var normalizedGender = char.ToUpperInvariant(patient.Gender);
-        if (!AllowedGenders.Contains(normalizedGender))
-        {
-            throw new DomainException("Patient gender must be F, M, or O.");
-        }
-
-        ValidatePatientForUpdate(patient);
-    }
-
-    private static void ValidatePatientForUpdate(Patient patient)
-    {
-        if (string.IsNullOrWhiteSpace(patient.FullName))
-        {
-            throw new DomainException("Patient full name is required.");
-        }
-
-        if (string.IsNullOrWhiteSpace(patient.PhoneNumber))
-        {
-            throw new DomainException("Patient phone number is required.");
-        }
-    }
-
-    private static void EnsurePositiveId(int id)
-    {
-        if (id <= 0)
-        {
-            throw new DomainException("Patient id must be greater than zero.");
-        }
-    }
-
-    private static string NormalizeRequired(string value)
-        => value.Trim();
-
-    private static string? NormalizeOptional(string? value)
-        => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+    public async Task DeactivateAsync(int id)
+        => await _repo.DeactivateAsync(id);
 }
