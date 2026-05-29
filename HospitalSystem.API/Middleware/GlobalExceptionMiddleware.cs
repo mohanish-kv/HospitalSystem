@@ -1,4 +1,5 @@
 using HospitalSystem.API.Domain.Exceptions;
+using Microsoft.Data.SqlClient;
 
 namespace HospitalSystem.API.Middleware;
 
@@ -18,6 +19,18 @@ public class GlobalExceptionMiddleware
         try
         {
             await _next(context);
+        }
+        catch (AppointmentConflictException ex)
+        {
+            _logger.LogWarning(ex, "A conflicting appointment request was rejected.");
+            context.Response.StatusCode = StatusCodes.Status409Conflict;
+            await context.Response.WriteAsJsonAsync(new { error = ex.Message });
+        }
+        catch (SqlException ex) when (ex.Number is 2601 or 2627)
+        {
+            _logger.LogWarning(ex, "A duplicate resource was rejected.");
+            context.Response.StatusCode = StatusCodes.Status409Conflict;
+            await context.Response.WriteAsJsonAsync(new { error = "A resource with the same unique value already exists." });
         }
         catch (DomainException ex)
         {
