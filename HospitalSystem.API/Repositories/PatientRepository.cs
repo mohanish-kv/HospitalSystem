@@ -54,10 +54,17 @@ public class PatientRepository : IPatientRepository
 
     public async Task<Patient?> GetByIdAsync(int id)
     {
+        const string sql = @"
+            SELECT PatientId, PatientCode, FullName, DateOfBirth, Gender,
+                   PhoneNumber, Email, IsActive, CreatedAt
+            FROM Patients
+            WHERE PatientId = @PatientId
+              AND IsActive = 1;";
+
         using var conn = new SqlConnection(_connectionString);
-        using var cmd = new SqlCommand("sp_GetPatientById", conn)
+        using var cmd = new SqlCommand(sql, conn)
         {
-            CommandType = CommandType.StoredProcedure
+            CommandType = CommandType.Text
         };
         cmd.Parameters.AddWithValue("@PatientId", id);
 
@@ -84,15 +91,25 @@ public class PatientRepository : IPatientRepository
 
     public async Task DeactivateAsync(int id)
     {
+        const string sql = @"
+            UPDATE Patients
+            SET IsActive = 0
+            WHERE PatientId = @PatientId
+              AND IsActive = 1;";
+
         using var conn = new SqlConnection(_connectionString);
-        using var cmd = new SqlCommand("sp_DeactivatePatient", conn)
+        using var cmd = new SqlCommand(sql, conn)
         {
-            CommandType = CommandType.StoredProcedure
+            CommandType = CommandType.Text
         };
         cmd.Parameters.AddWithValue("@PatientId", id);
 
         await conn.OpenAsync();
-        await cmd.ExecuteNonQueryAsync();
+        var affectedRows = await cmd.ExecuteNonQueryAsync();
+        if (affectedRows == 0)
+        {
+            throw new KeyNotFoundException($"Patient {id} not found.");
+        }
     }
 
     private static Patient MapPatient(SqlDataReader reader)
