@@ -140,6 +140,9 @@ public class ReportRepository : IReportRepository
         }
     }
 
+    private static bool IsMissingStoredProcedure(SqlException ex)
+        => ex.Errors.Cast<SqlError>().Any(error => error.Number == 2812);
+
     private static int GetInt32(DbDataReader reader, params string[] columnNames)
         => Convert.ToInt32(GetValue(reader, columnNames) ?? 0);
 
