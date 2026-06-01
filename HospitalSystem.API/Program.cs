@@ -5,12 +5,12 @@ using HospitalSystem.API.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ── Services ───────────────────────────────────────────────────
+// ── Services 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// Repositories (Scoped = one per HTTP request)
+// Repositories 
 builder.Services.AddScoped<IPatientRepository, PatientRepository>();
 builder.Services.AddScoped<IAppointmentRepository, AppointmentRepository>();
 builder.Services.AddScoped<IDoctorRepository, DoctorRepository>();
@@ -23,7 +23,7 @@ builder.Services.AddScoped<ReportService>();
 
 var app = builder.Build();
 
-// ── Middleware pipeline (order matters!) ───────────────────────
+// ── Middleware pipeline 
 app.UseMiddleware<GlobalExceptionMiddleware>();
 app.UseMiddleware<RequestLoggingMiddleware>();
 
