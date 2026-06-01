@@ -37,7 +37,7 @@ public class PatientsController : ControllerBase
     public async Task<IActionResult> RegisterPatient([FromBody] RegisterPatientRequest request)
     {
         var id = await _patientService.RegisterAsync(request);
-        return CreatedAtAction(nameof(RegisterPatient), new { id }, new { id });
+        return CreatedAtAction(nameof(GetPatientById), new { id }, new { id });
     }
 
     [HttpPut("{id:int}")]

@@ -15,18 +15,33 @@ public class ReportRepository : IReportRepository
 
     public async Task<IEnumerable<ConsolidatedAppointmentReportResponse>> GetConsolidatedAsync()
     {
+        const string commandText = @"
+            SELECT a.AppointmentId,
+                   a.AppointmentDate,
+                   a.Status,
+                   p.PatientId,
+                   p.FullName AS PatientName,
+                   d.DoctorId,
+                   d.FullName AS DoctorName,
+                   d.Specialization,
+                   d.ConsultationFee AS Fee
+            FROM Appointments a
+            JOIN Patients p ON a.PatientId = p.PatientId
+            JOIN Doctors d ON a.DoctorId = d.DoctorId
+            ORDER BY a.AppointmentDate DESC;";
+
         var rows = new List<ConsolidatedAppointmentReportResponse>();
-        await ExecuteReaderAsync("sp_GetConsolidatedAppointmentReport", reader => rows.Add(new ConsolidatedAppointmentReportResponse
+        await ExecuteReaderAsync(commandText, reader => rows.Add(new ConsolidatedAppointmentReportResponse
         {
             AppointmentId = GetInt32(reader, "AppointmentId"),
             AppointmentDate = GetDateTime(reader, "AppointmentDate"),
             Status = GetString(reader, "Status"),
             PatientId = GetInt32(reader, "PatientId"),
-            PatientName = GetString(reader, "PatientName", "PatientFullName", "FullName"),
+            PatientName = GetString(reader, "PatientName"),
             DoctorId = GetInt32(reader, "DoctorId"),
-            DoctorName = GetString(reader, "DoctorName", "DoctorFullName"),
+            DoctorName = GetString(reader, "DoctorName"),
             Specialization = GetString(reader, "Specialization"),
-            Fee = GetDecimal(reader, "Fee", "ConsultationFee", "Amount")
+            Fee = GetDecimal(reader, "Fee")
         }));
 
         return rows;
@@ -34,13 +49,24 @@ public class ReportRepository : IReportRepository
 
     public async Task<IEnumerable<DoctorAppointmentCountResponse>> GetDoctorCountsAsync()
     {
+        const string commandText = @"
+            SELECT d.DoctorId,
+                   d.FullName AS DoctorName,
+                   d.Specialization,
+                   COUNT(*) AS AppointmentCount
+            FROM Appointments a
+            JOIN Doctors d ON a.DoctorId = d.DoctorId
+            GROUP BY d.DoctorId, d.FullName, d.Specialization
+            HAVING COUNT(*) > 2
+            ORDER BY AppointmentCount DESC;";
+
         var rows = new List<DoctorAppointmentCountResponse>();
-        await ExecuteReaderAsync("sp_GetDoctorsWithMoreThanTwoAppointments", reader => rows.Add(new DoctorAppointmentCountResponse
+        await ExecuteReaderAsync(commandText, reader => rows.Add(new DoctorAppointmentCountResponse
         {
             DoctorId = GetInt32(reader, "DoctorId"),
-            DoctorName = GetString(reader, "DoctorName", "FullName"),
+            DoctorName = GetString(reader, "DoctorName"),
             Specialization = GetString(reader, "Specialization"),
-            AppointmentCount = GetInt32(reader, "AppointmentCount", "TotalAppointments")
+            AppointmentCount = GetInt32(reader, "AppointmentCount")
         }));
 
         return rows;
@@ -48,11 +74,20 @@ public class ReportRepository : IReportRepository
 
     public async Task<IEnumerable<RevenueBySpecializationResponse>> GetRevenueAsync()
     {
+        const string commandText = @"
+            SELECT d.Specialization,
+                   SUM(d.ConsultationFee) AS TotalRevenue
+            FROM Appointments a
+            JOIN Doctors d ON a.DoctorId = d.DoctorId
+            WHERE a.Status = 'Completed'
+            GROUP BY d.Specialization
+            ORDER BY TotalRevenue DESC;";
+
         var rows = new List<RevenueBySpecializationResponse>();
-        await ExecuteReaderAsync("sp_GetRevenueBySpecialization", reader => rows.Add(new RevenueBySpecializationResponse
+        await ExecuteReaderAsync(commandText, reader => rows.Add(new RevenueBySpecializationResponse
         {
             Specialization = GetString(reader, "Specialization"),
-            TotalRevenue = GetDecimal(reader, "TotalRevenue", "Revenue")
+            TotalRevenue = GetDecimal(reader, "TotalRevenue")
         }));
 
         return rows;
@@ -60,26 +95,41 @@ public class ReportRepository : IReportRepository
 
     public async Task<IEnumerable<DuplicateAppointmentResponse>> GetDuplicatesAsync()
     {
+        const string commandText = @"
+            SELECT p.PatientId,
+                   p.FullName AS PatientName,
+                   d.DoctorId,
+                   d.FullName AS DoctorName,
+                   CAST(a.AppointmentDate AS DATE) AS AppointmentDay,
+                   COUNT(*) AS AppointmentCount
+            FROM Appointments a
+            JOIN Patients p ON a.PatientId = p.PatientId
+            JOIN Doctors d ON a.DoctorId = d.DoctorId
+            WHERE a.Status <> 'Cancelled'
+            GROUP BY p.PatientId, p.FullName, d.DoctorId, d.FullName, CAST(a.AppointmentDate AS DATE)
+            HAVING COUNT(*) > 1
+            ORDER BY AppointmentCount DESC;";
+
         var rows = new List<DuplicateAppointmentResponse>();
-        await ExecuteReaderAsync("sp_GetDuplicatePatientDoctorAppointments", reader => rows.Add(new DuplicateAppointmentResponse
+        await ExecuteReaderAsync(commandText, reader => rows.Add(new DuplicateAppointmentResponse
         {
             PatientId = GetInt32(reader, "PatientId"),
-            PatientName = GetString(reader, "PatientName", "PatientFullName", "FullName"),
+            PatientName = GetString(reader, "PatientName"),
             DoctorId = GetInt32(reader, "DoctorId"),
-            DoctorName = GetString(reader, "DoctorName", "DoctorFullName"),
-            AppointmentDay = DateOnly.FromDateTime(GetDateTime(reader, "AppointmentDay", "AppointmentDate")),
-            AppointmentCount = GetInt32(reader, "AppointmentCount", "DuplicateCount")
+            DoctorName = GetString(reader, "DoctorName"),
+            AppointmentDay = DateOnly.FromDateTime(GetDateTime(reader, "AppointmentDay")),
+            AppointmentCount = GetInt32(reader, "AppointmentCount")
         }));
 
         return rows;
     }
 
-    private async Task ExecuteReaderAsync(string storedProcedure, Action<DbDataReader> readRow)
+    private async Task ExecuteReaderAsync(string commandText, Action<DbDataReader> readRow)
     {
         using var conn = new SqlConnection(_connectionString);
-        using var cmd = new SqlCommand(storedProcedure, conn)
+        using var cmd = new SqlCommand(commandText, conn)
         {
-            CommandType = CommandType.StoredProcedure
+            CommandType = CommandType.Text
         };
 
         await conn.OpenAsync();

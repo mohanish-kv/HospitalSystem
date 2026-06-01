@@ -36,10 +36,15 @@ public class DoctorRepository : IDoctorRepository
 
     public async Task<Doctor?> GetByIdAsync(int id)
     {
+        const string sql = @"
+            SELECT DoctorId, FullName, Specialization, PhoneNumber, IsAvailable
+            FROM Doctors
+            WHERE DoctorId = @DoctorId;";
+
         using var conn = new SqlConnection(_connectionString);
-        using var cmd = new SqlCommand("sp_GetDoctorById", conn)
+        using var cmd = new SqlCommand(sql, conn)
         {
-            CommandType = CommandType.StoredProcedure
+            CommandType = CommandType.Text
         };
         cmd.Parameters.AddWithValue("@DoctorId", id);
 
