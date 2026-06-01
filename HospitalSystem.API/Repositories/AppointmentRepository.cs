@@ -44,11 +44,18 @@ public class AppointmentRepository : IAppointmentRepository
 
     public async Task<IEnumerable<Appointment>> GetUpcomingAsync()
     {
+        const string sql = @"
+            SELECT AppointmentId, PatientId, DoctorId, AppointmentDate, Status, CreatedAt
+            FROM Appointments
+            WHERE AppointmentDate BETWEEN GETDATE() AND DATEADD(DAY, 7, GETDATE())
+              AND Status = 'Scheduled'
+            ORDER BY AppointmentDate;";
+
         var appointments = new List<Appointment>();
         using var conn = new SqlConnection(_connectionString);
-        using var cmd = new SqlCommand("sp_GetUpcomingAppointments", conn)
+        using var cmd = new SqlCommand(sql, conn)
         {
-            CommandType = CommandType.StoredProcedure
+            CommandType = CommandType.Text
         };
 
         await conn.OpenAsync();
@@ -63,11 +70,17 @@ public class AppointmentRepository : IAppointmentRepository
 
     public async Task<IEnumerable<Appointment>> GetByDoctorAsync(int doctorId)
     {
+        const string sql = @"
+            SELECT AppointmentId, PatientId, DoctorId, AppointmentDate, Status, CreatedAt
+            FROM Appointments
+            WHERE DoctorId = @DoctorId
+            ORDER BY AppointmentDate DESC;";
+
         var appointments = new List<Appointment>();
         using var conn = new SqlConnection(_connectionString);
-        using var cmd = new SqlCommand("sp_GetAppointmentsByDoctor", conn)
+        using var cmd = new SqlCommand(sql, conn)
         {
-            CommandType = CommandType.StoredProcedure
+            CommandType = CommandType.Text
         };
         cmd.Parameters.AddWithValue("@DoctorId", doctorId);
 
