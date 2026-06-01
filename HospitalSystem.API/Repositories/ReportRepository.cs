@@ -16,7 +16,7 @@ public class ReportRepository : IReportRepository
     public async Task<IEnumerable<ConsolidatedAppointmentReportResponse>> GetConsolidatedAsync()
     {
         var rows = new List<ConsolidatedAppointmentReportResponse>();
-        await ExecuteReaderAsync("sp_GetConsolidatedAppointmentReport", reader => rows.Add(new ConsolidatedAppointmentReportResponse
+        await ExecuteReaderAsync(["sp_ConsolidatedReport", "sp_GetConsolidatedAppointmentReport"], reader => rows.Add(new ConsolidatedAppointmentReportResponse
         {
             AppointmentId = GetInt32(reader, "AppointmentId"),
             AppointmentDate = GetDateTime(reader, "AppointmentDate"),
@@ -35,7 +35,7 @@ public class ReportRepository : IReportRepository
     public async Task<IEnumerable<DoctorAppointmentCountResponse>> GetDoctorCountsAsync()
     {
         var rows = new List<DoctorAppointmentCountResponse>();
-        await ExecuteReaderAsync("sp_GetDoctorsWithMoreThanTwoAppointments", reader => rows.Add(new DoctorAppointmentCountResponse
+        await ExecuteReaderAsync(["sp_DoctorAppointmentCount", "sp_GetDoctorsWithMoreThanTwoAppointments"], reader => rows.Add(new DoctorAppointmentCountResponse
         {
             DoctorId = GetInt32(reader, "DoctorId"),
             DoctorName = GetString(reader, "DoctorName", "FullName"),
@@ -49,7 +49,7 @@ public class ReportRepository : IReportRepository
     public async Task<IEnumerable<RevenueBySpecializationResponse>> GetRevenueAsync()
     {
         var rows = new List<RevenueBySpecializationResponse>();
-        await ExecuteReaderAsync("sp_GetRevenueBySpecialization", reader => rows.Add(new RevenueBySpecializationResponse
+        await ExecuteReaderAsync(["sp_RevenueBySpecialization", "sp_GetRevenueBySpecialization"], reader => rows.Add(new RevenueBySpecializationResponse
         {
             Specialization = GetString(reader, "Specialization"),
             TotalRevenue = GetDecimal(reader, "TotalRevenue", "Revenue")
@@ -61,20 +61,37 @@ public class ReportRepository : IReportRepository
     public async Task<IEnumerable<DuplicateAppointmentResponse>> GetDuplicatesAsync()
     {
         var rows = new List<DuplicateAppointmentResponse>();
-        await ExecuteReaderAsync("sp_GetDuplicatePatientDoctorAppointments", reader => rows.Add(new DuplicateAppointmentResponse
+        await ExecuteReaderAsync(["sp_DuplicateDayBookings", "sp_GetDuplicatePatientDoctorAppointments"], reader => rows.Add(new DuplicateAppointmentResponse
         {
             PatientId = GetInt32(reader, "PatientId"),
             PatientName = GetString(reader, "PatientName", "PatientFullName", "FullName"),
             DoctorId = GetInt32(reader, "DoctorId"),
             DoctorName = GetString(reader, "DoctorName", "DoctorFullName"),
             AppointmentDay = DateOnly.FromDateTime(GetDateTime(reader, "AppointmentDay", "AppointmentDate")),
-            AppointmentCount = GetInt32(reader, "AppointmentCount", "DuplicateCount")
+            AppointmentCount = GetInt32(reader, "AppointmentCount", "DuplicateCount", "PatientCount")
         }));
 
         return rows;
     }
 
-    private async Task ExecuteReaderAsync(string storedProcedure, Action<DbDataReader> readRow)
+    private async Task ExecuteReaderAsync(string[] storedProcedures, Action<DbDataReader> readRow)
+    {
+        for (var i = 0; i < storedProcedures.Length; i++)
+        {
+            try
+            {
+                await ExecuteSingleReaderAsync(storedProcedures[i], readRow);
+                return;
+            }
+            catch (SqlException ex) when (IsMissingStoredProcedure(ex) && i < storedProcedures.Length - 1)
+            {
+                // Try the next configured report stored procedure name for compatibility
+                // with databases that use either the SQL script names or API names.
+            }
+        }
+    }
+
+    private async Task ExecuteSingleReaderAsync(string storedProcedure, Action<DbDataReader> readRow)
     {
         using var conn = new SqlConnection(_connectionString);
         using var cmd = new SqlCommand(storedProcedure, conn)
@@ -89,6 +106,9 @@ public class ReportRepository : IReportRepository
             readRow(reader);
         }
     }
+
+    private static bool IsMissingStoredProcedure(SqlException ex)
+        => ex.Errors.Cast<SqlError>().Any(error => error.Number == 2812);
 
     private static int GetInt32(DbDataReader reader, params string[] columnNames)
         => Convert.ToInt32(GetValue(reader, columnNames) ?? 0);
