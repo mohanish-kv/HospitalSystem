@@ -49,6 +49,16 @@ public class GlobalExceptionMiddleware
             _logger.LogWarning(ex, "Duplicate patient contact information");
             await WriteError(context, StatusCodes.Status409Conflict, ex.Message);
         }
+        catch (SqlException ex) when (ex.Number == 50003 || ex.Number == 50011)
+        {
+            _logger.LogWarning(ex, "Requested resource was not found or cannot be modified");
+            await WriteError(context, StatusCodes.Status404NotFound, ex.Message);
+        }
+        catch (SqlException ex) when (ex.Number == 547)
+        {
+            _logger.LogWarning(ex, "Invalid database reference");
+            await WriteError(context, StatusCodes.Status400BadRequest, "Referenced patient or doctor does not exist.");
+        }
         catch (SqlException ex) when (ex.Number == 50010)
         {
             _logger.LogWarning(ex, "Doctor unavailable for requested appointment");
