@@ -15,7 +15,7 @@ public class ReportRepository : IReportRepository
 
     public async Task<IEnumerable<ConsolidatedAppointmentReportResponse>> GetConsolidatedAsync()
     {
-        const string sql = @"
+        const string commandText = @"
             SELECT a.AppointmentId,
                    a.AppointmentDate,
                    a.Status,
@@ -31,7 +31,7 @@ public class ReportRepository : IReportRepository
             ORDER BY a.AppointmentDate DESC;";
 
         var rows = new List<ConsolidatedAppointmentReportResponse>();
-        await ExecuteReaderAsync(["sp_ConsolidatedReport", "sp_GetConsolidatedAppointmentReport"], reader => rows.Add(new ConsolidatedAppointmentReportResponse
+        await ExecuteReaderAsync(commandText, reader => rows.Add(new ConsolidatedAppointmentReportResponse
         {
             AppointmentId = GetInt32(reader, "AppointmentId"),
             AppointmentDate = GetDateTime(reader, "AppointmentDate"),
@@ -49,7 +49,7 @@ public class ReportRepository : IReportRepository
 
     public async Task<IEnumerable<DoctorAppointmentCountResponse>> GetDoctorCountsAsync()
     {
-        const string sql = @"
+        const string commandText = @"
             SELECT d.DoctorId,
                    d.FullName AS DoctorName,
                    d.Specialization,
@@ -61,7 +61,7 @@ public class ReportRepository : IReportRepository
             ORDER BY AppointmentCount DESC;";
 
         var rows = new List<DoctorAppointmentCountResponse>();
-        await ExecuteReaderAsync(["sp_DoctorAppointmentCount", "sp_GetDoctorsWithMoreThanTwoAppointments"], reader => rows.Add(new DoctorAppointmentCountResponse
+        await ExecuteReaderAsync(commandText, reader => rows.Add(new DoctorAppointmentCountResponse
         {
             DoctorId = GetInt32(reader, "DoctorId"),
             DoctorName = GetString(reader, "DoctorName"),
@@ -74,7 +74,7 @@ public class ReportRepository : IReportRepository
 
     public async Task<IEnumerable<RevenueBySpecializationResponse>> GetRevenueAsync()
     {
-        const string sql = @"
+        const string commandText = @"
             SELECT d.Specialization,
                    SUM(d.ConsultationFee) AS TotalRevenue
             FROM Appointments a
@@ -84,7 +84,7 @@ public class ReportRepository : IReportRepository
             ORDER BY TotalRevenue DESC;";
 
         var rows = new List<RevenueBySpecializationResponse>();
-        await ExecuteReaderAsync(["sp_RevenueBySpecialization", "sp_GetRevenueBySpecialization"], reader => rows.Add(new RevenueBySpecializationResponse
+        await ExecuteReaderAsync(commandText, reader => rows.Add(new RevenueBySpecializationResponse
         {
             Specialization = GetString(reader, "Specialization"),
             TotalRevenue = GetDecimal(reader, "TotalRevenue")
@@ -95,7 +95,7 @@ public class ReportRepository : IReportRepository
 
     public async Task<IEnumerable<DuplicateAppointmentResponse>> GetDuplicatesAsync()
     {
-        const string sql = @"
+        const string commandText = @"
             SELECT p.PatientId,
                    p.FullName AS PatientName,
                    d.DoctorId,
@@ -111,40 +111,23 @@ public class ReportRepository : IReportRepository
             ORDER BY AppointmentCount DESC;";
 
         var rows = new List<DuplicateAppointmentResponse>();
-        await ExecuteReaderAsync(["sp_DuplicateDayBookings", "sp_GetDuplicatePatientDoctorAppointments"], reader => rows.Add(new DuplicateAppointmentResponse
+        await ExecuteReaderAsync(commandText, reader => rows.Add(new DuplicateAppointmentResponse
         {
             PatientId = GetInt32(reader, "PatientId"),
             PatientName = GetString(reader, "PatientName"),
             DoctorId = GetInt32(reader, "DoctorId"),
-            DoctorName = GetString(reader, "DoctorName", "DoctorFullName"),
-            AppointmentDay = DateOnly.FromDateTime(GetDateTime(reader, "AppointmentDay", "AppointmentDate")),
-            AppointmentCount = GetInt32(reader, "AppointmentCount", "DuplicateCount", "PatientCount")
+            DoctorName = GetString(reader, "DoctorName"),
+            AppointmentDay = DateOnly.FromDateTime(GetDateTime(reader, "AppointmentDay")),
+            AppointmentCount = GetInt32(reader, "AppointmentCount")
         }));
 
         return rows;
     }
 
-    private async Task ExecuteReaderAsync(string[] storedProcedures, Action<DbDataReader> readRow)
-    {
-        for (var i = 0; i < storedProcedures.Length; i++)
-        {
-            try
-            {
-                await ExecuteSingleReaderAsync(storedProcedures[i], readRow);
-                return;
-            }
-            catch (SqlException ex) when (IsMissingStoredProcedure(ex) && i < storedProcedures.Length - 1)
-            {
-                // Try the next configured report stored procedure name for compatibility
-                // with databases that use either the SQL script names or API names.
-            }
-        }
-    }
-
-    private async Task ExecuteSingleReaderAsync(string storedProcedure, Action<DbDataReader> readRow)
+    private async Task ExecuteReaderAsync(string commandText, Action<DbDataReader> readRow)
     {
         using var conn = new SqlConnection(_connectionString);
-        using var cmd = new SqlCommand(sql, conn)
+        using var cmd = new SqlCommand(commandText, conn)
         {
             CommandType = CommandType.Text
         };
