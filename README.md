@@ -1,0 +1,56 @@
+# HospitalSystem
+
+A .NET 8 ASP.NET Core Web API for basic hospital operations, including patient registration and maintenance, doctor lookups, appointment booking/cancellation, and reporting. Data access is implemented with ADO.NET against SQL Server stored procedures defined in `HospitalDB.sql`.
+
+## Project structure
+
+```text
+HospitalSystem.sln                  # Visual Studio/.NET solution
+HospitalDB.sql                      # SQL Server database schema, indexes, seed data, and stored procedures
+HospitalSystem.API/                 # ASP.NET Core Web API project
+  Controllers/                      # HTTP API endpoints grouped by feature
+  Domain/Entities/                  # Core domain models: Patient, Doctor, Appointment, Person
+  Domain/Exceptions/                # Domain-specific exception types
+  DTOs/Requests/                    # Request payload contracts
+  DTOs/Responses/                   # Response payload contracts
+  Interfaces/                       # Repository abstractions
+  Middleware/                       # Global exception handling and request logging middleware
+  Repositories/                     # ADO.NET repository implementations
+  Services/                         # Business/use-case services used by controllers
+  Program.cs                        # Dependency injection and HTTP middleware pipeline
+  appsettings.json                  # Default configuration, including the HospitalDb connection string
+```
+
+## Setup steps
+
+1. Install the .NET 8 SDK and ensure a SQL Server instance is available.
+2. Create and initialize the database by running `HospitalDB.sql` against SQL Server. The script creates the `HospitalDB` database and required stored procedures.
+3. Update `HospitalSystem.API/appsettings.json` if your SQL Server connection differs from the default local trusted connection:
+
+   ```json
+   "ConnectionStrings": {
+     "HospitalDb": "Server=localhost;Database=HospitalDB;Trusted_Connection=True;TrustServerCertificate=True;"
+   }
+   ```
+
+4. Restore and build the solution:
+
+   ```bash
+   dotnet restore HospitalSystem.sln
+   dotnet build HospitalSystem.sln
+   ```
+
+5. Run the API:
+
+   ```bash
+   dotnet run --project HospitalSystem.API/HospitalSystem.API.csproj
+   ```
+
+6. In a development environment, open Swagger UI at the HTTPS or HTTP URL printed by `dotnet run` with `/swagger` appended.
+
+## Assumptions
+
+- SQL Server is the backing database, and application queries rely on the stored procedures in `HospitalDB.sql` being present.
+- The default connection string assumes local SQL Server with Windows/Trusted authentication; non-Windows or remote environments may need SQL authentication or another server name.
+- Swagger is enabled only when `ASPNETCORE_ENVIRONMENT` is `Development`.
+- No automated test project is currently included in the solution, so `dotnet build` is the primary verification command available in this repository.
