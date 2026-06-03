@@ -44,9 +44,9 @@ public class GlobalExceptionMiddleware
             _logger.LogWarning(ex, "Requested resource was not found");
             await WriteError(context, StatusCodes.Status404NotFound, ex.Message);
         }
-        catch (SqlException ex) when (ex.Number == 50001 || ex.Number == 50002)
+        catch (SqlException ex) when (ex.Number is 50001 or 50002 or 50020 or 50021)
         {
-            _logger.LogWarning(ex, "Duplicate patient contact information");
+            _logger.LogWarning(ex, "Duplicate patient or doctor contact information");
             await WriteError(context, StatusCodes.Status409Conflict, ex.Message);
         }
         catch (SqlException ex) when (ex.Number == 50003 || ex.Number == 50011)

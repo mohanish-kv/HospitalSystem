@@ -123,6 +123,31 @@ GO
 
 --stored procedure for doctors
 
+-- Add a new doctor
+CREATE PROCEDURE sp_AddDoctor
+    @DoctorCode      VARCHAR(20),
+    @FullName        NVARCHAR(150),
+    @Specialization  NVARCHAR(100),
+    @PhoneNumber     VARCHAR(20),
+    @ConsultationFee DECIMAL(10,2),
+    @IsAvailable     BIT = 1
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF EXISTS (SELECT 1 FROM Doctors WHERE DoctorCode = @DoctorCode)
+        THROW 50020, 'Doctor code already registered.', 1;
+
+    IF EXISTS (SELECT 1 FROM Doctors WHERE PhoneNumber = @PhoneNumber)
+        THROW 50021, 'Doctor phone number already registered.', 1;
+
+    INSERT INTO Doctors (DoctorCode, FullName, Specialization, PhoneNumber, ConsultationFee, IsAvailable)
+    VALUES (@DoctorCode, @FullName, @Specialization, @PhoneNumber, @ConsultationFee, @IsAvailable);
+
+    SELECT SCOPE_IDENTITY() AS NewId;
+END
+GO
+
 -- Get doctors by specialization and/or availability
 CREATE PROCEDURE sp_GetDoctors
     @Specialization NVARCHAR(100) = NULL,
