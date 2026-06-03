@@ -27,6 +27,11 @@ internal static class AdoNetReaderExtensions
             ? reader.GetString(ordinal)
             : null;
 
+    public static decimal? GetOptionalDecimal(this DbDataReader reader, string columnName)
+        => reader.TryGetOrdinal(columnName, out var ordinal) && !reader.IsDBNull(ordinal)
+            ? reader.GetDecimal(ordinal)
+            : null;
+
     public static DateTime? GetOptionalDateTime(this DbDataReader reader, string columnName)
         => reader.TryGetOrdinal(columnName, out var ordinal) && !reader.IsDBNull(ordinal)
             ? reader.GetDateTime(ordinal)

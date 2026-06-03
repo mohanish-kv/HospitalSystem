@@ -1,13 +1,24 @@
-namespace HospitalSystem.API.DTOs.Responses;
+using System.ComponentModel.DataAnnotations;
 
-public class DoctorResponse
+namespace HospitalSystem.API.DTOs.Requests;
+
+public class AddDoctorRequest
 {
-    public int DoctorId { get; set; }
+    [Required]
     public string DoctorCode { get; set; } = string.Empty;
+
+    [Required]
     public string FullName { get; set; } = string.Empty;
+
+    [Required]
     public string Specialization { get; set; } = string.Empty;
+
+    [Required]
+    [Phone]
     public string PhoneNumber { get; set; } = string.Empty;
-    public string? Email { get; set; }
+
+    [Range(0, 99999999.99)]
     public decimal ConsultationFee { get; set; }
-    public bool IsAvailable { get; set; }
+
+    public bool IsAvailable { get; set; } = true;
 }

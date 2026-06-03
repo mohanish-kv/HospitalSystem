@@ -48,6 +48,23 @@ HospitalSystem.API/                 # ASP.NET Core Web API project
 
 6. In a development environment, open Swagger UI at the HTTPS or HTTP URL printed by `dotnet run` with `/swagger` appended.
 
+## Doctor API examples
+
+Add a doctor with `POST /api/doctors`:
+
+```json
+{
+  "doctorCode": "D004",
+  "fullName": "Dr. Asha Menon",
+  "specialization": "Dermatology",
+  "phoneNumber": "9000012345",
+  "consultationFee": 700.00,
+  "isAvailable": true
+}
+```
+
+The endpoint returns `201 Created` with the newly created doctor id and a `Location` header for `GET /api/doctors/{id}`.
+
 ## Assumptions
 
 - SQL Server is the backing database, and application queries rely on the stored procedures in `HospitalDB.sql` being present.

@@ -4,6 +4,7 @@ namespace HospitalSystem.API.Interfaces;
 
 public interface IDoctorRepository
 {
+    Task<int> AddAsync(Doctor doctor);
     Task<IEnumerable<Doctor>> GetAsync(string? specialization, bool? isAvailable);
     Task<Doctor?> GetByIdAsync(int id);
 }
