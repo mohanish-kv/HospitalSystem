@@ -46,33 +46,13 @@ public class PatientService
     {
         var patients = await _repo.GetAllActiveAsync();
 
-        return patients.Select(p => new PatientResponse
-        {
-            PatientId = p.Id,
-            PatientCode = p.Code,
-            FullName = p.FullName,
-            Age = p.Age,
-            Gender = p.Gender.ToString(),
-            PhoneNumber = p.PhoneNumber,
-            Email = p.Email
-        });
+        return patients.Select(MapPatientResponse);
     }
 
     public async Task<PatientResponse?> GetByIdAsync(int id)
     {
         var patient = await _repo.GetByIdAsync(id);
-        return patient is null
-            ? null
-            : new PatientResponse
-            {
-                PatientId = patient.Id,
-                PatientCode = patient.Code,
-                FullName = patient.FullName,
-                Age = patient.Age,
-                Gender = patient.Gender.ToString(),
-                PhoneNumber = patient.PhoneNumber,
-                Email = patient.Email
-            };
+        return patient is null ? null : MapPatientResponse(patient);
     }
 
     public async Task UpdateAsync(int id, UpdatePatientRequest req)
@@ -89,4 +69,18 @@ public class PatientService
 
     public async Task DeactivateAsync(int id)
         => await _repo.DeactivateAsync(id);
+
+    private static PatientResponse MapPatientResponse(Patient patient)
+        => new()
+        {
+            PatientId = patient.Id,
+            PatientCode = patient.Code,
+            FullName = patient.FullName,
+            Age = patient.Age,
+            Gender = patient.Gender.ToString(),
+            PhoneNumber = patient.PhoneNumber,
+            Email = patient.Email,
+            IsActive = patient.IsActive,
+            Status = patient.IsActive ? "Active" : "Inactive"
+        };
 }
