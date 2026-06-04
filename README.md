@@ -33,7 +33,7 @@ HospitalSystem.API/                 # ASP.NET Core Web API project
    }
    ```
 
-4. Configure SMTP email delivery if patient notifications should be sent for registrations, booked appointments, and cancelled appointments. Keep `IsEnabled` set to `false` for local development without an SMTP account.
+4. *optional* Configure SMTP email delivery if patient notifications should be sent for registrations, booked appointments, and cancelled appointments. Keep `IsEnabled` set to `false` for local development without an SMTP account.
 
    ```json
    "EmailSettings": {
