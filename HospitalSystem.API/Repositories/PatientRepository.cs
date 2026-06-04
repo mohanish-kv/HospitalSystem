@@ -58,8 +58,7 @@ public class PatientRepository : IPatientRepository
             SELECT PatientId, PatientCode, FullName, DateOfBirth, Gender,
                    PhoneNumber, Email, IsActive, CreatedAt
             FROM Patients
-            WHERE PatientId = @PatientId
-              AND IsActive = 1;";
+            WHERE PatientId = @PatientId;";
 
         using var conn = new SqlConnection(_connectionString);
         using var cmd = new SqlCommand(sql, conn)
@@ -75,18 +74,31 @@ public class PatientRepository : IPatientRepository
 
     public async Task UpdateAsync(Patient patient)
     {
+        const string sql = @"
+            UPDATE Patients
+            SET FullName = @FullName,
+                PhoneNumber = @PhoneNumber,
+                Email = @Email,
+                IsActive = @IsActive
+            WHERE PatientId = @PatientId;";
+
         using var conn = new SqlConnection(_connectionString);
-        using var cmd = new SqlCommand("sp_UpdatePatient", conn)
+        using var cmd = new SqlCommand(sql, conn)
         {
-            CommandType = CommandType.StoredProcedure
+            CommandType = CommandType.Text
         };
         cmd.Parameters.AddWithValue("@PatientId", patient.Id);
         cmd.Parameters.AddWithValue("@FullName", patient.FullName);
         cmd.Parameters.AddWithValue("@PhoneNumber", patient.PhoneNumber);
         cmd.Parameters.AddWithValue("@Email", (object?)patient.Email ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@IsActive", patient.IsActive);
 
         await conn.OpenAsync();
-        await cmd.ExecuteNonQueryAsync();
+        var affectedRows = await cmd.ExecuteNonQueryAsync();
+        if (affectedRows == 0)
+        {
+            throw new KeyNotFoundException($"Patient {patient.Id} not found.");
+        }
     }
 
     public async Task DeactivateAsync(int id)

@@ -63,12 +63,31 @@ public class PatientService
         patient.FullName = req.FullName;
         patient.PhoneNumber = req.PhoneNumber;
         patient.Email = req.Email;
+        patient.IsActive = ResolvePatientIsActive(req, patient.IsActive);
 
         await _repo.UpdateAsync(patient);
     }
 
     public async Task DeactivateAsync(int id)
         => await _repo.DeactivateAsync(id);
+
+    private static bool ResolvePatientIsActive(UpdatePatientRequest request, bool currentIsActive)
+    {
+        var statusIsActive = request.Status?.Trim().ToUpperInvariant() switch
+        {
+            null or "" => (bool?)null,
+            "ACTIVE" => true,
+            "INACTIVE" => false,
+            _ => throw new ArgumentException("Status must be either 'Active' or 'Inactive'.")
+        };
+
+        if (request.IsActive.HasValue && statusIsActive.HasValue && request.IsActive.Value != statusIsActive.Value)
+        {
+            throw new ArgumentException("IsActive and Status must represent the same patient status.");
+        }
+
+        return request.IsActive ?? statusIsActive ?? currentIsActive;
+    }
 
     private static PatientResponse MapPatientResponse(Patient patient)
         => new()

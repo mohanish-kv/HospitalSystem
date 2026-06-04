@@ -13,4 +13,9 @@ public class UpdatePatientRequest
 
     [EmailAddress]
     public string? Email { get; set; }
+
+    public bool? IsActive { get; set; }
+
+    [RegularExpression("^(Active|Inactive)$", ErrorMessage = "Status must be either 'Active' or 'Inactive'.")]
+    public string? Status { get; set; }
 }
