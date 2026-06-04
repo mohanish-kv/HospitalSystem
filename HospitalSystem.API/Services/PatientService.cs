@@ -46,33 +46,13 @@ public class PatientService
     {
         var patients = await _repo.GetAllActiveAsync();
 
-        return patients.Select(p => new PatientResponse
-        {
-            PatientId = p.Id,
-            PatientCode = p.Code,
-            FullName = p.FullName,
-            Age = p.Age,
-            Gender = p.Gender.ToString(),
-            PhoneNumber = p.PhoneNumber,
-            Email = p.Email
-        });
+        return patients.Select(MapPatientResponse);
     }
 
     public async Task<PatientResponse?> GetByIdAsync(int id)
     {
         var patient = await _repo.GetByIdAsync(id);
-        return patient is null
-            ? null
-            : new PatientResponse
-            {
-                PatientId = patient.Id,
-                PatientCode = patient.Code,
-                FullName = patient.FullName,
-                Age = patient.Age,
-                Gender = patient.Gender.ToString(),
-                PhoneNumber = patient.PhoneNumber,
-                Email = patient.Email
-            };
+        return patient is null ? null : MapPatientResponse(patient);
     }
 
     public async Task UpdateAsync(int id, UpdatePatientRequest req)
@@ -83,10 +63,43 @@ public class PatientService
         patient.FullName = req.FullName;
         patient.PhoneNumber = req.PhoneNumber;
         patient.Email = req.Email;
+        patient.IsActive = ResolvePatientIsActive(req, patient.IsActive);
 
         await _repo.UpdateAsync(patient);
     }
 
     public async Task DeactivateAsync(int id)
         => await _repo.DeactivateAsync(id);
+
+    private static bool ResolvePatientIsActive(UpdatePatientRequest request, bool currentIsActive)
+    {
+        var statusIsActive = request.Status?.Trim().ToUpperInvariant() switch
+        {
+            null or "" => (bool?)null,
+            "ACTIVE" => true,
+            "INACTIVE" => false,
+            _ => throw new ArgumentException("Status must be either 'Active' or 'Inactive'.")
+        };
+
+        if (request.IsActive.HasValue && statusIsActive.HasValue && request.IsActive.Value != statusIsActive.Value)
+        {
+            throw new ArgumentException("IsActive and Status must represent the same patient status.");
+        }
+
+        return request.IsActive ?? statusIsActive ?? currentIsActive;
+    }
+
+    private static PatientResponse MapPatientResponse(Patient patient)
+        => new()
+        {
+            PatientId = patient.Id,
+            PatientCode = patient.Code,
+            FullName = patient.FullName,
+            Age = patient.Age,
+            Gender = patient.Gender.ToString(),
+            PhoneNumber = patient.PhoneNumber,
+            Email = patient.Email,
+            IsActive = patient.IsActive,
+            Status = patient.IsActive ? "Active" : "Inactive"
+        };
 }
