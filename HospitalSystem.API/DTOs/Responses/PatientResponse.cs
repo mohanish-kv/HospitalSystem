@@ -9,4 +9,6 @@ public class PatientResponse
     public string Gender { get; set; } = string.Empty;
     public string PhoneNumber { get; set; } = string.Empty;
     public string? Email { get; set; }
+    public bool IsActive { get; set; }
+    public string Status { get; set; } = string.Empty;
 }
