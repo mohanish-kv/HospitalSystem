@@ -5,7 +5,7 @@ namespace HospitalSystem.API.Interfaces;
 public interface IPatientRepository
 {
     Task<int> RegisterAsync(Patient patient);
-    Task<IEnumerable<Patient>> GetAllActiveAsync();
+    Task<IEnumerable<Patient>> GetAllAsync();
     Task<Patient?> GetByIdAsync(int id);
     Task UpdateAsync(Patient patient);
     Task DeactivateAsync(int id);

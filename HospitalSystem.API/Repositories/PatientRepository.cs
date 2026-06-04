@@ -33,13 +33,18 @@ public class PatientRepository : IPatientRepository
         return Convert.ToInt32(result);
     }
 
-    public async Task<IEnumerable<Patient>> GetAllActiveAsync()
+    public async Task<IEnumerable<Patient>> GetAllAsync()
     {
+        const string sql = @"
+            SELECT PatientId, PatientCode, FullName, DateOfBirth, Gender,
+                   PhoneNumber, Email, IsActive, CreatedAt
+            FROM Patients;";
+
         var patients = new List<Patient>();
         using var conn = new SqlConnection(_connectionString);
-        using var cmd = new SqlCommand("sp_GetActivePatients", conn)
+        using var cmd = new SqlCommand(sql, conn)
         {
-            CommandType = CommandType.StoredProcedure
+            CommandType = CommandType.Text
         };
 
         await conn.OpenAsync();
