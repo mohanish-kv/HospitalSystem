@@ -21,7 +21,7 @@ HospitalSystem.API/                 # ASP.NET Core Web API project
   appsettings.json                  # Default configuration, including HospitalDb and SMTP email settings
 ```
 
-## Setup steps
+## Setup steps using command line
 
 1. Install the .NET 8 SDK and ensure a SQL Server instance is available.
 2. Create and initialize the database by running `HospitalDB.sql` against SQL Server. The script creates the `HospitalDB` database and required stored procedures.
