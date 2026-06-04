@@ -8,8 +8,13 @@ namespace HospitalSystem.API.Services;
 public class PatientService
 {
     private readonly IPatientRepository _repo;
+    private readonly IEmailService _emailService;
 
-    public PatientService(IPatientRepository repo) => _repo = repo;
+    public PatientService(IPatientRepository repo, IEmailService emailService)
+    {
+        _repo = repo;
+        _emailService = emailService;
+    }
 
     public async Task<int> RegisterAsync(RegisterPatientRequest req)
     {
@@ -23,7 +28,18 @@ public class PatientService
             Email = req.Email
         };
 
-        return await _repo.RegisterAsync(patient);
+        var patientId = await _repo.RegisterAsync(patient);
+
+        await _emailService.SendEmailAsync(
+            patient.Email,
+            "Hospital registration successful",
+            $"Dear {patient.FullName},\n\n" +
+            "Your patient registration has been completed successfully.\n\n" +
+            $"Patient Code: {patient.Code}\n" +
+            $"Patient Id: {patientId}\n\n" +
+            "Thank you,\nHospital System");
+
+        return patientId;
     }
 
     public async Task<IEnumerable<PatientResponse>> GetAllActiveAsync()
