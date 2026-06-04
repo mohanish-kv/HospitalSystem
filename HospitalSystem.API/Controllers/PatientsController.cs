@@ -16,9 +16,9 @@ public class PatientsController : ControllerBase
 
     [HttpGet]
     [ProducesResponseType(typeof(IEnumerable<PatientResponse>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<IEnumerable<PatientResponse>>> GetActivePatients()
+    public async Task<ActionResult<IEnumerable<PatientResponse>>> GetPatients()
     {
-        var patients = await _patientService.GetAllActiveAsync();
+        var patients = await _patientService.GetAllAsync();
         return Ok(patients);
     }
 

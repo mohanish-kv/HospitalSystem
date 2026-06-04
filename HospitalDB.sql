@@ -82,15 +82,14 @@ BEGIN
 END
 GO
 
--- Get all active patients
-CREATE PROCEDURE sp_GetActivePatients
+-- Get all patients, including active and inactive
+CREATE PROCEDURE sp_GetPatients
 AS
 BEGIN
     SET NOCOUNT ON;
     SELECT PatientId, PatientCode, FullName, DateOfBirth, Gender,
            PhoneNumber, Email, IsActive, CreatedAt
-    FROM Patients
-    WHERE IsActive = 1;
+    FROM Patients;
 END
 GO
 

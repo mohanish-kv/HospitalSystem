@@ -42,9 +42,9 @@ public class PatientService
         return patientId;
     }
 
-    public async Task<IEnumerable<PatientResponse>> GetAllActiveAsync()
+    public async Task<IEnumerable<PatientResponse>> GetAllAsync()
     {
-        var patients = await _repo.GetAllActiveAsync();
+        var patients = await _repo.GetAllAsync();
 
         return patients.Select(MapPatientResponse);
     }
