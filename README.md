@@ -18,7 +18,7 @@ HospitalSystem.API/                 # ASP.NET Core Web API project
   Repositories/                     # ADO.NET repository implementations
   Services/                         # Business/use-case services used by controllers
   Program.cs                        # Dependency injection and HTTP middleware pipeline
-  appsettings.json                  # Default configuration, including the HospitalDb connection string
+  appsettings.json                  # Default configuration, including HospitalDb and SMTP email settings
 ```
 
 ## Setup steps
@@ -33,20 +33,35 @@ HospitalSystem.API/                 # ASP.NET Core Web API project
    }
    ```
 
-4. Restore and build the solution:
+4. Configure SMTP email delivery if patient notifications should be sent for registrations, booked appointments, and cancelled appointments. Keep `IsEnabled` set to `false` for local development without an SMTP account.
+
+   ```json
+   "EmailSettings": {
+     "IsEnabled": true,
+     "SmtpServer": "smtp.your-provider.com",
+     "Port": 587,
+     "SenderName": "Hospital System",
+     "SenderEmail": "no-reply@your-hospital.com",
+     "Username": "smtp-user",
+     "Password": "smtp-password",
+     "UseStartTls": true
+   }
+   ```
+
+5. Restore and build the solution:
 
    ```bash
    dotnet restore HospitalSystem.sln
    dotnet build HospitalSystem.sln
    ```
 
-5. Run the API:
+6. Run the API:
 
    ```bash
    dotnet run --project HospitalSystem.API/HospitalSystem.API.csproj
    ```
 
-6. In a development environment, open Swagger UI at the HTTPS or HTTP URL printed by `dotnet run` with `/swagger` appended.
+7. In a development environment, open Swagger UI at the HTTPS or HTTP URL printed by `dotnet run` with `/swagger` appended.
 
 ## Doctor API examples
 

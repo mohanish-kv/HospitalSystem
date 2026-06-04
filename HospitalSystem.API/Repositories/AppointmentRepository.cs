@@ -42,6 +42,26 @@ public class AppointmentRepository : IAppointmentRepository
         await cmd.ExecuteNonQueryAsync();
     }
 
+
+    public async Task<Appointment?> GetByIdAsync(int appointmentId)
+    {
+        const string sql = @"
+            SELECT AppointmentId, PatientId, DoctorId, AppointmentDate, Status, CreatedAt
+            FROM Appointments
+            WHERE AppointmentId = @AppointmentId;";
+
+        using var conn = new SqlConnection(_connectionString);
+        using var cmd = new SqlCommand(sql, conn)
+        {
+            CommandType = CommandType.Text
+        };
+        cmd.Parameters.AddWithValue("@AppointmentId", appointmentId);
+
+        await conn.OpenAsync();
+        using var reader = await cmd.ExecuteReaderAsync();
+        return await reader.ReadAsync() ? MapAppointment(reader) : null;
+    }
+
     public async Task<IEnumerable<Appointment>> GetUpcomingAsync()
     {
         const string sql = @"

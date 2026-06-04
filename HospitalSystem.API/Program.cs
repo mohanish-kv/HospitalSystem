@@ -1,3 +1,4 @@
+using HospitalSystem.API.Configuration;
 using HospitalSystem.API.Interfaces;
 using HospitalSystem.API.Middleware;
 using HospitalSystem.API.Repositories;
@@ -9,6 +10,9 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
+builder.Services.AddScoped<IEmailService, EmailService>();
 
 // Repositories 
 builder.Services.AddScoped<IPatientRepository, PatientRepository>();
